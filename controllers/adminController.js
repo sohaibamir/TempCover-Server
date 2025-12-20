@@ -71,7 +71,7 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   });
 
   await transporter.sendMail({
-    from: `"Temp v Cover" <${process.env.SMTP_USER}>`,
+    from: process.env.SMTP_SENDER,
     to: userEmail,
     subject: "Your Verification Link",
     html: emailTemplate({
