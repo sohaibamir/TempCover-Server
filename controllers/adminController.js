@@ -42,14 +42,19 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 // Link for verifying user
 export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const { insuranceNo } = req.params;
+  console.log(`Received request to send insurance link for insuranceNo: ${insuranceNo}`);
 
   const insurance = await Insurance.findOne({ insuranceNo }).populate("user");
+  console.log("Fetched insurance:", insurance);
+
   if (!insurance) {
+    console.error(`Insurance not found for insuranceNo: ${insuranceNo}`);
     res.status(404);
     throw new Error("Insurance not found");
   }
 
   if (!insurance.user || !insurance.user.email) {
+    console.error(`No email found for user associated with insuranceNo: ${insuranceNo}`, insurance.user);
     res.status(400);
     throw new Error("No email found for this insurance user");
   }
@@ -57,9 +62,13 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const userEmail = insurance.user.email;
   const userName = insurance.user.name;
 
-  const token = generateLinkToken(insurance._id, insurance.user._id);
+  console.log(`Found user email: ${userEmail}, user name: ${userName}`);
 
+  const token = generateLinkToken(insurance._id, insurance.user._id);
   const link = `${process.env.CLIENT_URL}/verify/${token}`;
+
+  console.log(`Generated verification link: ${link}`);
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER,
     port: Number(process.env.SMTP_PORT),
@@ -70,15 +79,22 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
     },
   });
 
-  await transporter.sendMail({
-    from: process.env.SMTP_SENDER,
-    to: userEmail,
-    subject: "Your Verification Link",
-    html: emailTemplate({
-      name: userName,
-      link,
-    }),
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_SENDER,
+      to: userEmail,
+      subject: "Your Verification Link",
+      html: emailTemplate({
+        name: userName,
+        link,
+      }),
+    });
+    console.log("Email sent successfully:", info);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    res.status(500);
+    throw new Error("Failed to send email");
+  }
 
   res.json({ message: `Link sent successfully to ${userEmail}` });
 });
