@@ -1,10 +1,10 @@
 import asyncHandler from "express-async-handler";
 import Admin from "../models/adminModel.js";
 import Insurance from "../models/insuranceModel.js";
-import nodemailer from "nodemailer";
 import { ErrorHandler } from "../utils/ErrorHandler.js";
 import { generateToken, generateLinkToken } from "../utils/tokenUtils.js";
 import { emailTemplate } from "../templates/emailTemplate.js";
+import SibApiV3Sdk from "sib-api-v3-sdk";
 
 // Create admin
 export const createAdmin = asyncHandler(async (req, res) => {
@@ -42,13 +42,8 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 // Link for verifying user
 export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const { insuranceNo } = req.params;
-  console.log(
-    `Received request to send insurance link for insuranceNo: ${insuranceNo}`
-  );
 
   const insurance = await Insurance.findOne({ insuranceNo }).populate("user");
-  console.log("Fetched insurance:", insurance);
-
   if (!insurance) {
     console.error(`Insurance not found for insuranceNo: ${insuranceNo}`);
     res.status(404);
@@ -63,49 +58,27 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const userEmail = insurance.user.email;
   const userName = insurance.user.name;
 
-  console.log(`Found user email: ${userEmail}, user name: ${userName}`);
+  // Brevo API setup
+  const client = SibApiV3Sdk.ApiClient.instance;
+  client.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
   const token = generateLinkToken(insurance._id, insurance.user._id);
   const link = `${process.env.CLIENT_URL}/verify/${token}`;
 
-  console.log(
-    process.env.SMTP_SERVER,
-    process.env.SMTP_PORT,
-    process.env.SMTP_USER,
-    process.env.SMTP_PASS,
-    process.env.SMTP_SENDER
-  );
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_SERVER,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+  await apiInstance.sendTransacEmail({
+    subject: "Your Verification Link",
+    sender: {
+      name: "Temp Cover",
+      email: "noreply.insurance.tempcover@gmail.com",
     },
+    to: [{ email: userEmail, name: userName }],
+    htmlContent: emailTemplate({
+      name: userName,
+      link,
+    }),
   });
-
-  console.log(
-    !transporter ? "Transporter is null or undefined" : "Transporter is set up"
-  );
-
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_SENDER,
-      to: userEmail,
-      subject: "Your Verification Link",
-      html: emailTemplate({
-        name: userName,
-        link,
-      }),
-    });
-    console.log("Email sent successfully:", info);
-  } catch (error) {
-    console.error("Failed to send email:", error);
-    res.status(500);
-    throw new Error("Failed to send email");
-  }
 
   res.json({ message: `Link sent successfully to ${userEmail}` });
 });
