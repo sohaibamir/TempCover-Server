@@ -55,13 +55,17 @@ export const verifyUserInsurance = asyncHandler(async (req, res) => {
   if (!insurance) throw new ErrorHandler("Insurance not found", 404);
 
   const user = insurance.user;
+  const normalizeDate = (date) => new Date(date).toISOString().slice(0, 10);
+  console.log("Verifying user details:", {
+    provided: { dob: normalizeDate(dob), },
+    actual: { dob: normalizeDate(user?.dob) },
+  });
 
-    console.log("Verifying insurance for:",  user );
   if (
     !user ||
     user.name !== name ||
     user.email !== email ||
-    user.dob.toISOString().slice(0, 10) !== dob
+    normalizeDate(user.dob) !== normalizeDate(dob)
   ) {
     throw new ErrorHandler("User details do not match", 400);
   }
@@ -247,7 +251,6 @@ const PDF_GENERATORS = {
 // Generate PDF based on type
 export const generatePDF = asyncHandler(async (req, res) => {
   const { insuranceId, type } = req.params;
-  console.log("Received request to generate PDF:", { insuranceId, type });
 
   if (STATIC_TYPES.includes(type)) {
     const filename = `${type}.pdf`;
@@ -274,7 +277,7 @@ export const generatePDF = asyncHandler(async (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-  `attachment; filename=${type}-${insurance.insuranceNo}.pdf`
+  `attachment; filename=${type}.pdf`
   );
 
   return res.send(Buffer.from(pdfBytes));

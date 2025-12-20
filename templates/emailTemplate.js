@@ -1,4 +1,4 @@
-export const emailTemplate = ({ name, link, clientUrl }) => {
+export const emailTemplate = ({ name, link }) => {
   return `
     <div style="font-family: Arial, sans-serif; color:#333; line-height:1.6;">
     <p style="font-weight:bold">Hi ${name},</p>
@@ -8,7 +8,7 @@ export const emailTemplate = ({ name, link, clientUrl }) => {
       <p>Check out the summary of your policy and a link to view and print your policy documents below.</p>
 
       <p>Thanks again for choosing 
-        <a href="${clientUrl}" style="color:#0066cc; text-decoration:none;">tempcover.com</a> 
+        <a href="${link}" style="color:#0066cc; text-decoration:none;">tempcover.com</a> 
         for your temporary insurance needs - we hope to see you again soon.
       </p>
 

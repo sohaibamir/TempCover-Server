@@ -7,7 +7,6 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   address: { type: String, required: true },
   phoneNo: { type: String, required: true },
-  residency: { type: String, required: true },
   occupation: { type: String },
   role: { type: String, default: "user" },
 });

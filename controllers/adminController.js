@@ -28,7 +28,7 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const admin = await Admin.findOne({ email });
 
-  if (admin) {
+  if (admin && (await admin.matchPassword(password))) {
     res.json({
       user: admin,
       token: generateToken(admin._id),
@@ -70,13 +70,12 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   });
 
   await transporter.sendMail({
-    from: `"Insurance Admin" <${process.env.SMTP_USER}>`,
+    from: `"Temp Cover" <${process.env.SMTP_USER}>`,
     to: userEmail,
     subject: "Your Verification Link",
     html: emailTemplate({
       name: userName,
       link,
-      clientUrl: process.env.CLIENT_URL,
     }),
   });
 

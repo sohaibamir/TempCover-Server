@@ -37,7 +37,6 @@ export const addInsuranceWithUser = asyncHandler(async (req, res) => {
     dob,
     address, 
     phoneNo,
-    residency,
     occupation,
   } = req.body;
 
@@ -61,7 +60,7 @@ console.log("Request Body:", req.body);
   // Create user if not exists
   let newUser = await User.findOne({ email: email });
   if (!newUser) {
-    newUser = await User.create({ title, name, email, dob, address, phoneNo, residency, occupation, insuranceNo });
+    newUser = await User.create({ title, name, email, dob, address, phoneNo, occupation, insuranceNo });
   }
 
   const insurance = await Insurance.create({
@@ -137,4 +136,22 @@ export const updateInsurance = asyncHandler(async (req, res) => {
     message: "Insurance updated successfully",
     insurance: updatedInsurance,
   });
+});
+
+export const generateInsuranceNo = asyncHandler(async (req, res) => {
+  const generateRandomInsuranceNo = () => {
+    const prefix = "TCV-MOT-";
+    const randomDigits = Math.floor(10000000 + Math.random() * 90000000).toString();
+    return `${prefix}${randomDigits}`;
+  };
+
+  let insuranceNo;
+  let exists;
+
+  do {
+    insuranceNo = generateRandomInsuranceNo();
+    exists = await Insurance.findOne({ insuranceNo });
+  } while (exists);
+
+  res.status(200).json({ insuranceNo });
 });
