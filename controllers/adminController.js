@@ -42,7 +42,9 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 // Link for verifying user
 export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const { insuranceNo } = req.params;
-  console.log(`Received request to send insurance link for insuranceNo: ${insuranceNo}`);
+  console.log(
+    `Received request to send insurance link for insuranceNo: ${insuranceNo}`
+  );
 
   const insurance = await Insurance.findOne({ insuranceNo }).populate("user");
   console.log("Fetched insurance:", insurance);
@@ -54,7 +56,6 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   }
 
   if (!insurance.user || !insurance.user.email) {
-    console.error(`No email found for user associated with insuranceNo: ${insuranceNo}`, insurance.user);
     res.status(400);
     throw new Error("No email found for this insurance user");
   }
@@ -67,7 +68,13 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const token = generateLinkToken(insurance._id, insurance.user._id);
   const link = `${process.env.CLIENT_URL}/verify/${token}`;
 
-  console.log(`Generated verification link: ${link}`);
+  console.log(
+    process.env.SMTP_SERVER,
+    process.env.SMTP_PORT,
+    process.env.SMTP_USER,
+    process.env.SMTP_PASS,
+    process.env.SMTP_SENDER
+  );
 
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER,
@@ -78,6 +85,10 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
       pass: process.env.SMTP_PASS,
     },
   });
+
+  console.log(
+    !transporter ? "Transporter is null or undefined" : "Transporter is set up"
+  );
 
   try {
     const info = await transporter.sendMail({
