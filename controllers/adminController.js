@@ -41,22 +41,15 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 
 // Link for verifying user
 export const sendInsuranceLink = asyncHandler(async (req, res) => {
-  console.log("📩 sendInsuranceLink API called");
-  console.log("Params:", req.params);
-
   const { insuranceNo } = req.params;
 
   const insurance = await Insurance.findOne({ insuranceNo }).populate("user");
-  console.log("Insurance found:", insurance ? insurance._id : null);
-
   if (!insurance) {
-    console.error("❌ Insurance not found");
     res.status(404);
     throw new Error("Insurance not found");
   }
 
   if (!insurance.user || !insurance.user.email) {
-    console.error("❌ User or user email missing", insurance.user);
     res.status(400);
     throw new Error("No email found for this insurance user");
   }
@@ -64,43 +57,28 @@ export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const userEmail = insurance.user.email;
   const userName = insurance.user.name;
 
-  console.log("User Email:", userEmail);
-  console.log("User Name:", userName);
-
   const token = generateLinkToken(insurance._id, insurance.user._id);
-  console.log("Generated Token:", token);
-
-  console.log("CLIENT_URL:", process.env.CLIENT_URL);
-  console.log("SMTP_USER exists:", !!process.env.SMTP_USER);
-  console.log("SMTP_PASS exists:", !!process.env.SMTP_PASS);
 
   const link = `${process.env.CLIENT_URL}/verify/${token}`;
-  console.log("Verification Link:", link);
-
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.SMTP_SERVER,
+    port: Number(process.env.SMTP_PORT),
+    secure: false,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
   });
 
-  try {
-    const info = await transporter.sendMail({
-      from: `"Temp Cover" <${process.env.SMTP_USER}>`,
-      to: userEmail,
-      subject: "Your Verification Link",
-      html: emailTemplate({
-        name: userName,
-        link,
-      }),
-    });
-
-    console.log("✅ Email sent successfully:", info.response);
-  } catch (error) {
-    console.error("❌ Email sending failed:", error);
-    throw error;
-  }
+  await transporter.sendMail({
+    from: `"Temp v Cover" <${process.env.SMTP_USER}>`,
+    to: userEmail,
+    subject: "Your Verification Link",
+    html: emailTemplate({
+      name: userName,
+      link,
+    }),
+  });
 
   res.json({ message: `Link sent successfully to ${userEmail}` });
 });
@@ -121,7 +99,6 @@ export const getAdmins = asyncHandler(async (req, res) => {
     totalPages: Math.ceil(count / limit),
   });
 });
-
 
 export const updatePassword = asyncHandler(async (req, res) => {
   const { adminId } = req.params;
