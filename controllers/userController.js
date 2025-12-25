@@ -56,10 +56,6 @@ export const verifyUserInsurance = asyncHandler(async (req, res) => {
 
   const user = insurance.user;
   const normalizeDate = (date) => new Date(date).toISOString().slice(0, 10);
-  console.log("Verifying user details:", {
-    provided: { dob: normalizeDate(dob), },
-    actual: { dob: normalizeDate(user?.dob) },
-  });
 
   if (
     !user ||

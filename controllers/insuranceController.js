@@ -40,8 +40,6 @@ export const addInsuranceWithUser = asyncHandler(async (req, res) => {
     occupation,
   } = req.body;
 
-console.log("Request Body:", req.body);
-
   const exists = await Insurance.findOne({ insuranceNo });
   if (exists) {
     res.status(400);
@@ -55,13 +53,7 @@ console.log("Request Body:", req.body);
     );
   }
 
-  console.log("Uploaded Images:", uploadedImages);
-
-  // Create user if not exists
-  let newUser = await User.findOne({ email: email });
-  if (!newUser) {
-    newUser = await User.create({ title, name, email, dob, address, phoneNo, occupation, insuranceNo });
-  }
+  let newUser = await User.create({ title, name, email, dob, address, phoneNo, occupation, insuranceNo });
 
   const insurance = await Insurance.create({
     insuranceNo,

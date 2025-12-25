@@ -42,10 +42,9 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 // Link for verifying user
 export const sendInsuranceLink = asyncHandler(async (req, res) => {
   const { insuranceNo } = req.params;
-
+  
   const insurance = await Insurance.findOne({ insuranceNo }).populate("user");
   if (!insurance) {
-    console.error(`Insurance not found for insuranceNo: ${insuranceNo}`);
     res.status(404);
     throw new Error("Insurance not found");
   }
@@ -103,7 +102,6 @@ export const getAdmins = asyncHandler(async (req, res) => {
 export const updatePassword = asyncHandler(async (req, res) => {
   const { adminId } = req.params;
   const { currentPassword, password } = req.body;
-  console.log(currentPassword, password);
 
   const admin = await Admin.findById(adminId);
   if (!admin) {
